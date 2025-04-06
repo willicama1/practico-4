@@ -1,0 +1,102 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Grafo
+{
+    private Dictionary<int, List<int>> adyacencias = new Dictionary<int, List<int>>();
+
+    public void AgregarNodo(int nodo)
+    {
+        if (!adyacencias.ContainsKey(nodo))
+            adyacencias[nodo] = new List<int>();
+    }
+
+    public void AgregarArista(int origen, int destino)
+    {
+        AgregarNodo(origen);
+        AgregarNodo(destino);
+
+        adyacencias[origen].Add(destino);
+        adyacencias[destino].Add(origen); // grafo no dirigido
+    }
+
+    public Dictionary<int, int> CalcularCentralidadGrado()
+    {
+        var grados = new Dictionary<int, int>();
+        foreach (var nodo in adyacencias.Keys)
+        {
+            grados[nodo] = adyacencias[nodo].Count;
+        }
+        return grados;
+    }
+
+    public Dictionary<int, double> CalcularCentralidadCercania()
+    {
+        var cercanias = new Dictionary<int, double>();
+
+        foreach (var nodo in adyacencias.Keys)
+        {
+            var distancias = BFS(nodo);
+            double suma = distancias.Values.Sum();
+            cercanias[nodo] = suma == 0 ? 0 : (1.0 / suma);
+        }
+
+        return cercanias;
+    }
+
+    private Dictionary<int, int> BFS(int inicio)
+    {
+        var distancias = new Dictionary<int, int>();
+        var visitados = new HashSet<int>();
+        var cola = new Queue<int>();
+
+        distancias[inicio] = 0;
+        visitados.Add(inicio);
+        cola.Enqueue(inicio);
+
+        while (cola.Count > 0)
+        {
+            var actual = cola.Dequeue();
+
+            foreach (var vecino in adyacencias[actual])
+            {
+                if (!visitados.Contains(vecino))
+                {
+                    distancias[vecino] = distancias[actual] + 1;
+                    visitados.Add(vecino);
+                    cola.Enqueue(vecino);
+                }
+            }
+        }
+
+        return distancias;
+    }
+}
+
+class Programa
+{
+    static void Main()
+    {
+        var grafo = new Grafo();
+        grafo.AgregarArista(1, 2);
+        grafo.AgregarArista(1, 3);
+        grafo.AgregarArista(2, 3);
+        grafo.AgregarArista(3, 4);
+        grafo.AgregarArista(4, 5);
+
+        var grados = grafo.CalcularCentralidadGrado();
+        Console.WriteLine("Centralidad de Grado:");
+        foreach (var par in grados)
+        {
+            Console.WriteLine($"Nodo {par.Key}: {par.Value}");
+        }
+
+        var cercanias = grafo.CalcularCentralidadCercania();
+        Console.WriteLine("\nCentralidad de Cercanía:");
+        foreach (var par in cercanias)
+        {
+            Console.WriteLine($"Nodo {par.Key}: {par.Value:F3}");
+        }
+    }
+}
